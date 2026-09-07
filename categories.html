@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Категории справочника{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h1><i class="bi bi-folder"></i> Категории справочника</h1>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="bi bi-plus-circle"></i> Добавить категорию
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Родитель</th>
+                        <th>Элементов</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td>{{ cat.id }}</td>
+                        <td><strong>{{ cat.name }}</strong></td>
+                        <td>{{ cat.description[:50] }}{% if cat.description|length > 50 %}...{% endif %}</td>
+                        <td>{{ cat.parent.name if cat.parent else '-' }}</td>
+                        <td>{{ cat.items.count() }}</td>
+                        <td>
+                            {% if cat.is_active %}
+                            <span class="badge bg-success">Активна</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Неактивна</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
+                                    data-bs-target="#editCategoryModal{{ cat.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form method="POST" action="{{ url_for('directories.delete_category', category_id=cat.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Удалить категорию?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    
+                    <!-- Модальное окно редактирования -->
+                    <div class="modal fade" id="editCategoryModal{{ cat.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('directories.update_category', category_id=cat.id) }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Редактировать категорию</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Название</label>
+                                            <input type="text" class="form-control" name="name" value="{{ cat.name }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Описание</label>
+                                            <textarea class="form-control" name="description" rows="3">{{ cat.description or '' }}</textarea>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" name="is_active" 
+                                                   id="isActive{{ cat.id }}" {{ 'checked' if cat.is_active else '' }}>
+                                            <label class="form-check-label" for="isActive{{ cat.id }}">Активна</label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('directories.add_category') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить категорию</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Родительская категория</label>
+                        <select class="form-select" name="parent_id">
+                            <option value="">Нет (корневая)</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

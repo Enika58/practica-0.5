@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Запрос {{ request.request_number }}{% endblock %}
+
+{% block content %}
+<!-- Заголовок -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1>
+            <code>{{ request.request_number }}</code>
+            {{ request.title }}
+        </h1>
+        <p class="text-muted mb-0">
+            Создан: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }} 
+            {% if request.source == 'phone' %}<i class="bi bi-telephone"></i> Телефон{% endif %}
+            {% if request.source == 'email' %}<i class="bi bi-envelope"></i> Email{% endif %}
+            {% if request.source == 'web' %}<i class="bi bi-globe"></i> Веб{% endif %}
+            {% if request.source == 'walk-in' %}<i class="bi bi-person"></i> Визит{% endif %}
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('requests.requests_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+        {% if current_user.can_manage('operator') %}
+        <form method="POST" action="{{ url_for('requests.delete_request', request_id=request.id) }}" 
+              onsubmit="return confirm('Удалить запрос?')" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Основная информация -->
+    <div class="col-lg-8">
+        <!-- Детали запроса -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-card-text"></i> Информация</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Статус:</strong>
+                        <span class="badge bg-{{ 'secondary' if request.status=='new' else 'primary' if request.status=='in_progress' else 'warning' if request.status=='on_hold' else 'success' if request.status=='resolved' else 'dark' }}">
+                            {{ request.get_status_display() }}
+                        </span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Приоритет:</strong>
+                        <span class="badge {{ 'bg-danger' if request.priority=='critical' else 'bg-warning text-dark' if request.priority=='high' else 'bg-info' }}">
+                            {{ request.get_priority_display() }}
+                        </span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Исполнитель:</strong>
+                        {{ request.assignee.full_name or request.assignee.username if request.assignee else '<span class="text-muted">Не назначен</span>' | safe }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Создан:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </div>
+                    {% if request.resolved_at %}
+                    <div class="col-md-6 mb-3">
+                        <strong>Решён:</strong> {{ request.resolved_at.strftime('%d.%m.%Y %H:%M') }}
+                    </div>
+                    {% endif %}
+                    {% if request.category %}
+                    <div class="col-md-6 mb-3">
+                        <strong>Категория:</strong> {{ request.category.name }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <h6>Описание</h6>
+                <div class="p-3 bg-light rounded">
+                    {{ request.description }}
+                </div>
+                
+                {% if request.tags %}
+                <hr>
+                <h6>Теги</h6>
+                <div>
+                    {% for tag in request.tags.split(',') %}
+                    <span class="badge bg-secondary me-1">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Контактные данные -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Контактные данные клиента</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if request.client_name %}
+                    <div class="col-md-4 mb-2">
+                        <strong><i class="bi bi-person"></i> Имя:</strong> {{ request.client_name }}
+                    </div>
+                    {% endif %}
+                    {% if request.client_phone %}
+                    <div class="col-md-4 mb-2">
+                        <strong><i class="bi bi-telephone"></i> Телефон:</strong> {{ request.client_phone }}
+                    </div>
+                    {% endif %}
+                    {% if request.client_email %}
+                    <div class="col-md-4 mb-2">
+                        <strong><i class="bi bi-envelope"></i> Email:</strong> {{ request.client_email }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Комментарии -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Комментарии ({{ comments|length }})</h5>
+            </div>
+            <div class="card-body">
+                <!-- Форма добавления комментария -->
+                <form method="POST" action="{{ url_for('requests.add_comment', request_id=request.id) }}" class="mb-4">
+                    <div class="mb-2">
+                        <textarea class="form-control" name="text" rows="3" required 
+                                  placeholder="Введите комментарий..."></textarea>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="isInternal" name="is_internal">
+                        <label class="form-check-label" for="isInternal">
+                            Внутренний комментарий (не виден клиенту)
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-send"></i> Отправить
+                    </button>
+                </form>
+                
+                <hr>
+                
+                <!-- Список комментариев -->
+                {% for comment in comments %}
+                <div class="comment mb-3 p-3 rounded {% if comment.is_internal %}bg-warning bg-opacity-10 border-start border-warning{% else %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong>{{ comment.user.full_name or comment.user.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                    {% if comment.is_internal %}
+                    <div class="badge bg-warning text-dark mb-1">
+                        <i class="bi bi-lock"></i> Внутренний
+                    </div>
+                    {% endif %}
+                    <p class="mb-0">{{ comment.text }}</p>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">Комментариев пока нет</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Боковая панель -->
+    <div class="col-lg-4">
+        <!-- История изменений -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-clock-history"></i> История</h6>
+            </div>
+            <div class="card-body p-0">
+                {% for h in history %}
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">{{ h.created_at.strftime('%d.%m %H:%M') }}</small>
+                        <small>{{ h.user.username if h.user else 'Система' }}</small>
+                    </div>
+                    <p class="mb-0 small">
+                        {% if h.action == 'created' %}
+                        <i class="bi bi-plus-circle text-success"></i> Запрос создан
+                        {% elif h.action == 'status_change' %}
+                        <i class="bi bi-arrow-right-circle text-primary"></i> 
+                        Статус: {{ h.old_value }} → {{ h.new_value }}
+                        {% elif h.action == 'assign' %}
+                        <i class="bi bi-person-check text-info"></i> 
+                        Исполнитель: {{ h.old_value }} → {{ h.new_value }}
+                        {% else %}
+                        <i class="bi bi-pencil"></i> {{ h.action }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Действия -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if request.status == 'new' %}
+                    <a href="#" class="btn btn-outline-primary btn-sm" onclick="changeStatus('in_progress')">
+                        <i class="bi bi-play-circle"></i> Взять в работу
+                    </a>
+                    {% endif %}
+                    {% if request.status in ['new', 'in_progress'] %}
+                    <a href="#" class="btn btn-outline-success btn-sm" onclick="changeStatus('resolved')">
+                        <i class="bi bi-check-circle"></i> Решить
+                    </a>
+                    {% endif %}
+                    {% if request.status == 'resolved' %}
+                    <a href="#" class="btn btn-outline-secondary btn-sm" onclick="changeStatus('closed')">
+                        <i class="bi bi-archive"></i> Закрыть
+                    </a>
+                    {% endif %}
+                    {% if request.status == 'in_progress' %}
+                    <a href="#" class="btn btn-outline-warning btn-sm" onclick="changeStatus('on_hold')">
+                        <i class="bi bi-pause-circle"></i> На паузу
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('requests.update_request', request_id=request.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование запроса</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Тема</label>
+                        <input type="text" class="form-control" name="title" value="{{ request.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" name="description" rows="4" required>{{ request.description }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Имя клиента</label>
+                            <input type="text" class="form-control" name="client_name" value="{{ request.client_name or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Телефон</label>
+                            <input type="text" class="form-control" name="client_phone" value="{{ request.client_phone or '' }}">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Статус</label>
+                            <select class="form-select" name="status">
+                                <option value="new" {% if request.status=='new' %}selected{% endif %}>Новый</option>
+                                <option value="in_progress" {% if request.status=='in_progress' %}selected{% endif %}>В работе</option>
+                                <option value="on_hold" {% if request.status=='on_hold' %}selected{% endif %}>На паузе</option>
+                                <option value="resolved" {% if request.status=='resolved' %}selected{% endif %}>Решён</option>
+                                <option value="closed" {% if request.status=='closed' %}selected{% endif %}>Закрыт</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Приоритет</label>
+                            <select class="form-select" name="priority">
+                                <option value="low" {% if request.priority=='low' %}selected{% endif %}>Низкий</option>
+                                <option value="medium" {% if request.priority=='medium' %}selected{% endif %}>Средний</option>
+                                <option value="high" {% if request.priority=='high' %}selected{% endif %}>Высокий</option>
+                                <option value="critical" {% if request.priority=='critical' %}selected{% endif %}>Критический</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Исполнитель</label>
+                        <select class="form-select" name="assigned_to">
+                            <option value="">Не назначен</option>
+                            {% from 'requests/list.html' %}
+                            {% for u in [] %}{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Теги</label>
+                        <input type="text" class="form-control" name="tags" value="{{ request.tags or '' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeStatus(status) {
+    if (!confirm('Изменить статус на "' + status + '"?')) return;
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("requests.update_request", request_id=request.id) }}';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'status';
+    input.value = status;
+    form.appendChild(input);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

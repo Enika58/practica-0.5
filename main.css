@@ -1,0 +1,164 @@
+/* Основные стили АИС Справочная служба */
+
+/* Общие стили */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+main {
+    min-height: calc(100vh - 200px);
+}
+
+/* Карточки */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Таблицы */
+.table th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* Приоритеты */
+.priority-critical {
+    border-left: 4px solid #dc3545;
+}
+
+.priority-high {
+    border-left: 4px solid #ffc107;
+}
+
+.priority-medium {
+    border-left: 4px solid #0dcaf0;
+}
+
+.priority-low {
+    border-left: 4px solid #6c757d;
+}
+
+/* Навигация */
+.navbar-brand {
+    font-weight: 700;
+}
+
+/* Уведомления */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.alert-success {
+    border-left-color: #28a745;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+}
+
+/* Быстрые действия */
+.btn {
+    border-radius: 0.375rem;
+}
+
+.btn-sm {
+    border-radius: 0.25rem;
+}
+
+/* Профиль пользователя */
+.dropdown-menu {
+    min-width: 200px;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* Анимации */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Контент справочника */
+.content {
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+/* Комментарии */
+.comment {
+    border-radius: 0.5rem;
+}
+
+/* Пагинация */
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Badge для статусов */
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+}
+
+/* Поиск */
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Модальные окна */
+.modal-header {
+    background-color: #f8f9fa;
+}
+
+/* Утилиты */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

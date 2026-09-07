@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="bi bi-search"></i> Поиск</h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-auto">
+                        <input type="text" class="form-control form-control-lg" name="q" 
+                               placeholder="Введите поисковый запрос..." value="{{ query }}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-search"></i> Искать
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if query %}
+        <div class="alert alert-info">
+            <strong>Результаты поиска по запросу: "{{ query }}"</strong> 
+            (найдено: {{ total }})
+        </div>
+        
+        <!-- Результаты: элементы справочника -->
+        {% if items %}
+        <h4 class="mt-4"><i class="bi bi-book"></i> Элементы справочника ({{ items|length }})</h4>
+        <div class="row">
+            {% for item in items %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <a href="{{ url_for('directories.view_item', item_id=item.id) }}">{{ item.title }}</a>
+                        </h6>
+                        <p class="card-text text-muted small">{{ item.content[:200] }}</p>
+                        <small class="text-muted">
+                            <span class="badge bg-info">{{ item.category.name }}</span>
+                            <i class="bi bi-eye"></i> {{ item.views_count }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Результаты: FAQ -->
+        {% if faqs %}
+        <h4 class="mt-4"><i class="bi bi-question-circle"></i> FAQ ({{ faqs|length }})</h4>
+        {% for faq in faqs %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <h6><strong>{{ faq.question }}</strong></h6>
+                <p class="mb-0">{{ faq.answer[:200] }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        <!-- Результаты: запросы -->
+        {% if requests %}
+        <h4 class="mt-4"><i class="bi bi-list-ul"></i> Запросы ({{ requests|length }})</h4>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>№</th>
+                        <th>Тема</th>
+                        <th>Статус</th>
+                        <th>Приоритет</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td><code>{{ req.request_number }}</code></td>
+                        <td>{{ req.title[:50] }}</td>
+                        <td><span class="badge bg-{{ 'secondary' if req.status=='new' else 'primary' }}">{{ req.get_status_display() }}</span></td>
+                        <td><span class="badge {{ 'bg-danger' if req.priority=='critical' else 'bg-warning text-dark' if req.priority=='high' else 'bg-info' }}">{{ req.get_priority_display() }}</span></td>
+                        <td>{{ req.created_at.strftime('%d.%m %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        {% if not items and not faqs and not requests %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-search fs-1"></i>
+            <p class="mt-3">Ничего не найдено по запросу "{{ query }}"</p>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-search fs-1"></i>
+            <p class="mt-3">Введите поисковый запрос для поиска по справочнику и запросам</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

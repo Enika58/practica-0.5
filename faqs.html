@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h1><i class="bi bi-question-circle"></i> Часто задаваемые вопросы</h1>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFaqModal">
+            <i class="bi bi-plus-circle"></i> Добавить вопрос
+        </button>
+    </div>
+</div>
+
+<!-- Поиск по FAQ -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-3">
+            <div class="col-auto">
+                <input type="text" class="form-control" placeholder="Поиск по вопросам..." id="faqSearch">
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Список FAQ -->
+<div class="card">
+    <div class="card-body">
+        {% for faq in faqs %}
+        <div class="accordion-item mb-2 faq-item" data-question="{{ faq.question|lower }}">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#faq{{ faq.id }}">
+                    <strong>{{ faq.question }}</strong>
+                    <span class="ms-auto badge bg-secondary"><i class="bi bi-eye"></i> {{ faq.views_count }}</span>
+                </button>
+            </h2>
+            <div id="faq{{ faq.id }}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    {{ faq.answer }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-question-diamond fs-1"></i>
+            <p class="mt-2">Вопросы не добавлены</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addFaqModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('directories.add_faq') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить вопрос-ответ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Вопрос <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="question" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ответ <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="answer" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <select class="form-select" name="category_id">
+                            <option value="">Без категории</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Поиск по FAQ
+document.getElementById('faqSearch').addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.faq-item').forEach(item => {
+        const question = item.getAttribute('data-question');
+        item.style.display = question.includes(query) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

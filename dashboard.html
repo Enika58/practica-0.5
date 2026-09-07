@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-speedometer2"></i> Панель управления</h1>
+    </div>
+</div>
+
+<!-- Карточки статистики -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Всего запросов</h6>
+                        <h2 class="mb-0">{{ total_requests }}</h2>
+                    </div>
+                    <i class="bi bi-folder-open fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Новые запросы</h6>
+                        <h2 class="mb-0">{{ new_requests }}</h2>
+                    </div>
+                    <i class="bi bi-envelope-open fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">В работе</h6>
+                        <h2 class="mb-0">{{ in_progress }}</h2>
+                    </div>
+                    <i class="bi bi-hourglass-split fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Решено сегодня</h6>
+                        <h2 class="mb-0">{{ resolved_today }}</h2>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Мои задачи -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-task"></i> Мои задачи</h5>
+                <a href="{{ url_for('requests.requests_list', assigned='me') }}" class="btn btn-sm btn-outline-primary">
+                    Все мои <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if my_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>№</th>
+                                <th>Тема</th>
+                                <th>Статус</th>
+                                <th>Приоритет</th>
+                                <th>Дата</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in my_requests %}
+                            <tr>
+                                <td><code>{{ req.request_number }}</code></td>
+                                <td>{{ req.title[:50] }}{% if req.title|length > 50 %}...{% endif %}</td>
+                                <td><span class="badge bg-{{ 'secondary' if req.status=='new' else 'primary' }}">{{ req.get_status_display() }}</span></td>
+                                <td><span class="badge {{ 'bg-danger' if req.priority=='critical' else 'bg-warning text-dark' if req.priority=='high' else 'bg-info' }}">{{ req.get_priority_display() }}</span></td>
+                                <td>{{ req.created_at.strftime('%d.%m %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('requests.request_detail', request_id=req.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-1"></i>
+                    <p class="mt-2">У вас нет активных задач</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Последние запросы -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Последние запросы</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>№</th>
+                                <th>Тема</th>
+                                <th>Клиент</th>
+                                <th>Приоритет</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in recent_requests %}
+                            <tr>
+                                <td><code>{{ req.request_number }}</code></td>
+                                <td>{{ req.title[:40] }}{% if req.title|length > 40 %}...{% endif %}</td>
+                                <td>{{ req.client_name or '-' }}</td>
+                                <td><span class="badge {{ 'bg-danger' if req.priority=='critical' else 'bg-warning text-dark' if req.priority=='high' else 'bg-info' }}">{{ req.get_priority_display() }}</span></td>
+                                <td><span class="badge bg-{{ 'secondary' if req.status=='new' else 'primary' if req.status=='in_progress' else 'success' if req.status=='resolved' else 'dark' }}">{{ req.get_status_display() }}</span></td>
+                                <td>{{ req.created_at.strftime('%d.%m %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('requests.request_detail', request_id=req.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="col-lg-4">
+        <!-- Быстрые действия -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('requests.create_request') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Новый запрос
+                    </a>
+                    <a href="{{ url_for('directories.search') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Поиск в справочнике
+                    </a>
+                    <a href="{{ url_for('directories.faqs') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-question-circle"></i> FAQ
+                    </a>
+                    {% if current_user.can_manage('operator') %}
+                    <a href="{{ url_for('reporting.statistics') }}" class="btn btn-outline-success">
+                        <i class="bi bi-graph-up"></i> Статистика
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Распределение по статусам -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Статусы</h5>
+            </div>
+            <div class="card-body">
+                {% for status, count in status_counts %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>{{ {'new': 'Новый', 'in_progress': 'В работе', 'on_hold': 'На паузе', 'resolved': 'Решён', 'closed': 'Закрыт', 'rejected': 'Отклонён'}.get(status, status) }}</span>
+                    <span class="badge bg-secondary">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Топ исполнителей -->
+        {% if top_operators %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Топ исполнителей</h5>
+            </div>
+            <div class="card-body">
+                {% for name, count in top_operators %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>{{ name or 'Не указан' }}</span>
+                    <span class="badge bg-success">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

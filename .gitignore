@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Фласки
+instance/
+.webassets-cache
+
+# База данных
+*.db
+*.sqlite3
+
+# Локальная конфигурация
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Загрузки
+uploads/
+
+# Отчёты о покрытии
+htmlcov/
+.coverage
+coverage.xml

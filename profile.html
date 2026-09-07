@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> Профиль пользователя</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Имя пользователя</label>
+                            <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" name="full_name" value="{{ user.full_name or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Телефон</label>
+                            <input type="text" class="form-control" name="phone" value="{{ user.phone or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Роль</label>
+                            <input type="text" class="form-control" value="{{ user.role }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Статус</label>
+                            <input type="text" class="form-control" 
+                                   value="Активен" if user.is_active else "Заблокирован" disabled>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6>Смена пароля</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Текущий пароль</label>
+                            <input type="password" class="form-control" name="current_password">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" class="form-control" name="new_password">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Подтверждение пароля</label>
+                            <input type="password" class="form-control" name="confirm_password">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Информация</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Последний вход:</strong> {{ user.last_login.strftime('%d.%m.%Y %H:%M') if user.last_login else 'Никогда' }}</p>
+                <p><strong>Дата регистрации:</strong> {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Моя статистика</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>В работе:</strong> {{ user.requests.filter_by(status='in_progress').count() }}</p>
+                <p><strong>Решено:</strong> {{ user.requests.filter_by(status='resolved').count() }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

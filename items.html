@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Справочник{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h1><i class="bi bi-book"></i> Справочник</h1>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="bi bi-plus-circle"></i> Добавить элемент
+        </button>
+    </div>
+</div>
+
+<!-- Поиск и фильтры -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-3" method="GET" action="{{ url_for('directories.items') }}">
+            <div class="col-auto">
+                <input type="text" class="form-control" name="search" placeholder="Поиск..." value="{{ search }}">
+            </div>
+            <div class="col-auto">
+                <select class="form-select" name="category_id">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_id==cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Элементы справочника -->
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            {% for item in items.items %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">{{ item.title }}</h6>
+                            <small class="text-muted"><i class="bi bi-eye"></i> {{ item.views_count }}</small>
+                        </div>
+                        <p class="card-text text-muted small">{{ item.content[:150] }}{% if item.content|length > 150 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-info">{{ item.category.name if item.category else 'Без категории' }}</span>
+                            <a href="{{ url_for('directories.view_item', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Открыть
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <i class="bi bi-clock"></i> {{ item.created_at.strftime('%d.%m.%Y') }}
+                        {% if item.keywords %}
+                        <br><i class="bi bi-tags"></i> {{ item.keywords }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-1"></i>
+                    <p class="mt-2">Элементы не найдены</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Пагинация -->
+        {% if items.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if items.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('directories.items', page=items.prev_num, search=search, category_id=category_id) }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in items.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == items.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('directories.items', page=page_num, search=search, category_id=category_id) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if items.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('directories.items', page=items.next_num, search=search, category_id=category_id) }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('directories.add_item') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить элемент справочника</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Название <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Приоритет</label>
+                            <input type="number" class="form-control" name="priority" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Категория <span class="text-danger">*</span></label>
+                        <select class="form-select" name="category_id" required>
+                            <option value="">Выберите...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Содержание <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="content" rows="6" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ключевые слова</label>
+                        <input type="text" class="form-control" name="keywords" placeholder="слово1, слово2, слово3">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

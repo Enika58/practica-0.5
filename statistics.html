@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h1><i class="bi bi-graph-up"></i> Статистика</h1>
+    </div>
+    <div class="col-auto">
+        <form class="d-inline" method="GET">
+            <select class="form-select form-select-sm d-inline-block w-auto" name="period" onchange="this.form.submit()">
+                <option value="7" {% if days==7 %}selected{% endif %}>7 дней</option>
+                <option value="30" {% if days==30 %}selected{% endif %}>30 дней</option>
+                <option value="90" {% if days==90 %}selected{% endif %}>90 дней</option>
+                <option value="365" {% if days==365 %}selected{% endif %}>Год</option>
+            </select>
+        </form>
+        <a href="{{ url_for('reporting.export_report') }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download"></i> Экспорт CSV
+        </a>
+    </div>
+</div>
+
+<!-- Статистика по дням -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Запросы за период ({{ days }} дней)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Количество</th>
+                        <th>Визуализация</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in daily_stats %}
+                    <tr>
+                        <td>{{ day.date }}</td>
+                        <td>{{ day.count }}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ (day.count / daily_stats|map(attribute='count')|max * 100)|int if daily_stats|map(attribute='count')|max > 0 else 0 }}%">
+                                    {{ day.count }}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика по категориям -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-folder"></i> Запросы по категориям</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Категория</th>
+                        <th>Количество</th>
+                        <th>Доля</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total = category_stats|sum(attribute=1) %}
+                    {% for name, count in category_stats %}
+                    <tr>
+                        <td>{{ name or 'Без категории' }}</td>
+                        <td>{{ count }}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ (count / total * 100)|int if total > 0 else 0 }}%">
+                                    {{ (count / total * 100)|round(1) if total > 0 else 0 }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика по исполнителям -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Статистика исполнителей</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Исполнитель</th>
+                        <th>Логин</th>
+                        <th>Всего</th>
+                        <th>Решено</th>
+                        <th>Эффективность</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in operator_stats %}
+                    <tr>
+                        <td>{{ stat.full_name or 'Не указан' }}</td>
+                        <td><code>{{ stat.username }}</code></td>
+                        <td>{{ stat.total }}</td>
+                        <td>{{ stat.resolved }}</td>
+                        <td>
+                            {% if stat.total > 0 %}
+                            <span class="badge bg-{{ 'success' if (stat.resolved/stat.total*100) > 70 else 'warning' }}">
+                                {{ (stat.resolved/stat.total*100)|round(0)|int }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
